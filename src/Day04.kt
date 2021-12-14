@@ -1,18 +1,15 @@
 fun main() {
     val input = readInput("Day04")
 
-    val bets = input[0].split(",").map { it.toInt() }
+    val draws = input.first().split(",").map { it.toInt() }
 
-    val boards = input
-        .drop(1)
-        .chunked(6)
-        .map { boardLines ->
-            boardLines.filter { line ->
-                line.isNotBlank()
-            }
+    val boards: List<List<String>> = input.drop(1).chunked(6).map { board ->
+        board.filter { line ->
+            line.isNotBlank()
         }
+    }
 
-    val cleanedInput = boards.map { board ->
+    val boardInts: List<List<List<Int>>> = boards.map { board ->
         board.map { line ->
             line.trim()
                 .split(Regex("\\W+"))
@@ -20,13 +17,9 @@ fun main() {
         }
     }
 
+    var bingoBoards: List<BingoBoard> = boardInts.map { BingoBoard.fromCollection(it) }
 
-    var bingoBoards = cleanedInput.map { Board.fromCollection(it) }
-
-    // Prints all winners in order of appearance.
-    // Part 1 is the first winner.
-    // Part 2 is the last winner.
-    for (draw in bets) {
+    for (draw in draws) {
         for (board in bingoBoards) {
             board.mark(draw)
             if (board.isComplete()) {
@@ -36,18 +29,23 @@ fun main() {
             }
         }
     }
+
 }
 
-data class Field(val value: Int, val marked: Boolean = false)
+data class Field(val value: Int, var marked: Boolean = false) {
+    fun mark(){
+        marked = true
+    }
+}
 
-data class Board(val fields: List<MutableList<Field>>) {
+data class BingoBoard(val fields: List<List<Field>>) {
 
     private val widthIndices = fields[0].indices
     private val heightIndices = fields.indices
 
     companion object {
-        fun fromCollection(coll: List<List<Int>>): Board {
-            return Board(coll.map { row -> row.map { field -> Field(field) }.toMutableList() })
+        fun fromCollection(coll: List<List<Int>>): BingoBoard {
+            return BingoBoard(coll.map { row -> row.map { field -> Field(field) }.toMutableList() })
         }
     }
 
@@ -70,8 +68,8 @@ data class Board(val fields: List<MutableList<Field>>) {
 
     fun mark(num: Int) {
         for (row in this.fields) {
-            row.replaceAll {
-                if (it.value == num) it.copy(marked = true) else it
+            row.map {
+                if (it.value == num) it.mark()
             }
         }
     }
